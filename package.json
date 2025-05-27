@@ -1,0 +1,15 @@
+{
+	"private": true,
+	"name": "vtdd",
+	"packageManager": "bun@1.2.5",
+	"devDependencies": {
+		"turbo": "^2.5.3"
+	},
+	"workspaces": [
+		"apps/*"
+	],
+	"scripts": {
+		"dev": "turbo dev",
+		"type-check": "turbo type-check"
+	}
+}

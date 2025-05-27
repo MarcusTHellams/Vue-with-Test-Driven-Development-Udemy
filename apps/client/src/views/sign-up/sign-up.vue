@@ -53,7 +53,14 @@
                 />
                 <ErrorMessage as="div" class="invalid-feedback" name="passwordRepeat" />
               </BFormGroup>
-              <BButton :disabled type="submit" variant="primary">Sign Up</BButton>
+              <BButton :disabled type="submit" variant="primary"
+                >Sign Up
+                <span
+                  v-if="isPending"
+                  role="status"
+                  class="spinner-border spinner-border-sm"
+                ></span>
+              </BButton>
             </form>
           </BCardText>
         </BCard>

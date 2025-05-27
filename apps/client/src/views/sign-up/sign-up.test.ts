@@ -104,6 +104,7 @@ describe('sign up', () => {
       await user.type(passwordRepeat, 'd');
       await user.type(passwordRepeat, '{Backspace}');
       await user.click(signup);
+      expect(await screen.findByRole('status')).toBeInTheDocument();
       await waitFor(() => expect(signup).toBeDisabled());
       await waitFor(() => expect(spy).toHaveBeenCalled());
       await waitFor(() =>
@@ -113,7 +114,8 @@ describe('sign up', () => {
           username: 'marcus',
         }),
       );
-      expect(signup).toBeDisabled()
+      expect(signup).toBeDisabled();
+      await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
     });
   });
 });

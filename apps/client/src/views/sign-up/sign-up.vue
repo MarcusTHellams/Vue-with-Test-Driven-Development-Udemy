@@ -1,68 +1,87 @@
 <template>
-  <h1>Sign up</h1>
-  <BContainer>
+  <BContainer class="mt-5 pt-5">
     <BRow class="justify-content-center">
       <BCol md="6">
-        <Form
-          v-slot="{ errors }"
-          @submit="console.log($event)"
-          :validation-schema="toTypedSchema(schema)"
-        >
-          <BFormGroup class="mb-3" label-for="username" label="Username">
-            <Field
-              :class="{ 'is-invalid': errors.username }"
-              id="username"
-              data-testid="username-input"
-              :as="BFormInput"
-              name="username"
-            />
-            <ErrorMessage as="div" class="invalid-feedback" name="username" />
-          </BFormGroup>
-          <BFormGroup class="mb-3" label-for="email" label="Email">
-            <Field
-              :class="{ 'is-invalid': errors.email }"
-              type="email"
-              id="email"
-              data-testid="email-input"
-              :as="BFormInput"
-              name="email"
-            />
-            <ErrorMessage as="div" class="invalid-feedback" name="email" />
-          </BFormGroup>
-          <BFormGroup class="mb-3" label-for="password" label="Password">
-            <Field
-              :class="{ 'is-invalid': errors.password }"
-              type="password"
-              id="password"
-              data-testid="password-input"
-              :as="BFormInput"
-              name="password"
-            />
-            <ErrorMessage as="div" class="invalid-feedback" name="password" />
-          </BFormGroup>
-          <BFormGroup class="mb-3" label-for="passwordRepeat" label="Password Repeat">
-            <Field
-              :class="{ 'is-invalid': errors.passwordRepeat }"
-              type="password"
-              id="passwordRepeat"
-              data-testid="password-repeat-input"
-              :as="BFormInput"
-              name="passwordRepeat"
-            />
-            <ErrorMessage as="div" class="invalid-feedback" name="passwordRepeat" />
-          </BFormGroup>
-          <BButton type="submit" variant="primary">Submit</BButton>
-        </Form>
+        <BCard>
+          <BCardTitle class="text-center" tag="h1">Sign Up</BCardTitle>
+          <BCardText>
+            <form novalidate @submit="submitHandler">
+              <BFormGroup class="mb-3" label-for="username" label="Username">
+                <BFormInput
+                  :class="{ 'is-invalid': errors.username }"
+                  id="username"
+                  data-testid="username-input"
+                  name="username"
+                  v-model="username"
+                  v-bind="usernameAttrs"
+                />
+                <ErrorMessage as="div" class="invalid-feedback" name="username" />
+              </BFormGroup>
+              <BFormGroup class="mb-3" label-for="email" label="Email">
+                <BFormInput
+                  :class="{ 'is-invalid': errors.email }"
+                  id="email"
+                  data-testid="email-input"
+                  name="email"
+                  v-model="email"
+                  v-bind="emailAttrs"
+                  type="email"
+                />
+                <ErrorMessage as="div" class="invalid-feedback" name="email" />
+              </BFormGroup>
+              <BFormGroup class="mb-3" label-for="password" label="Password">
+                <BFormInput
+                  :class="{ 'is-invalid': errors.password }"
+                  id="password"
+                  data-testid="password-input"
+                  name="password"
+                  v-model="password"
+                  v-bind="passwordAttrs"
+                  type="password"
+                />
+                <ErrorMessage as="div" class="invalid-feedback" name="password" />
+              </BFormGroup>
+              <BFormGroup class="mb-3" label-for="passwordRepeat" label="Password Repeat">
+                <BFormInput
+                  :class="{ 'is-invalid': errors.passwordRepeat }"
+                  id="passwordRepeat"
+                  data-testid="passwordRepeat-input"
+                  name="passwordRepeat"
+                  v-model="passwordRepeat"
+                  v-bind="passwordRepeatAttrs"
+                  type="password"
+                />
+                <ErrorMessage as="div" class="invalid-feedback" name="passwordRepeat" />
+              </BFormGroup>
+              <BButton :disabled type="submit" variant="primary">Sign Up</BButton>
+            </form>
+          </BCardText>
+        </BCard>
       </BCol>
     </BRow>
   </BContainer>
 </template>
 
 <script setup lang="ts">
-  import { BFormInput, BFormGroup, BContainer, BRow, BCol, BButton } from 'bootstrap-vue-next';
-  import { Field, Form, ErrorMessage } from 'vee-validate';
+  import {
+    BFormInput,
+    BFormGroup,
+    BContainer,
+    BRow,
+    BCol,
+    BButton,
+    BCard,
+    BCardText,
+    BCardTitle,
+  } from 'bootstrap-vue-next';
+  import { ErrorMessage, useForm } from 'vee-validate';
   import { toTypedSchema } from '@vee-validate/zod';
   import { z } from 'zod';
+  import { computed } from 'vue';
+  import '@/lib/api';
+  import { useMutation } from '@tanstack/vue-query';
+  import { api } from '@/lib/api';
+
   const schema = z
     .object({
       username: z
@@ -91,6 +110,40 @@
         message: 'Password and Password Repeat must Match',
       },
     );
+
+  const { defineField, errors, handleSubmit, values } = useForm({
+    validationSchema: toTypedSchema(schema),
+  });
+
+  const { mutate, isPending } = useMutation<
+    unknown,
+    Error,
+    Omit<z.infer<typeof schema>, 'passwordRepeat'>
+  >({
+    mutationKey: ['sign-up'],
+    async mutationFn(values) {
+      return (await api.post('/users', values)).data;
+    },
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const submitHandler = handleSubmit(({ passwordRepeat, ...values }) => {
+    mutate(values);
+  });
+
+  const disabled = computed(() => {
+    return (
+      values.password !== values.passwordRepeat ||
+      !values.password ||
+      !values.passwordRepeat ||
+      isPending.value
+    );
+  });
+
+  const [username, usernameAttrs] = defineField('username');
+  const [email, emailAttrs] = defineField('email');
+  const [password, passwordAttrs] = defineField('password');
+  const [passwordRepeat, passwordRepeatAttrs] = defineField('passwordRepeat');
 </script>
 
 <style scoped></style>

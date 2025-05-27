@@ -64,6 +64,7 @@
             </form>
           </BCardText>
         </BCard>
+        <BAlert role="alert" variant="success" :model-value="!!successMessage">{{ successMessage }}</BAlert>
       </BCol>
     </BRow>
   </BContainer>
@@ -80,11 +81,12 @@
     BCard,
     BCardText,
     BCardTitle,
+    BAlert,
   } from 'bootstrap-vue-next';
   import { ErrorMessage, useForm } from 'vee-validate';
   import { toTypedSchema } from '@vee-validate/zod';
   import { z } from 'zod';
-  import { computed } from 'vue';
+  import { computed, ref } from 'vue';
   import '@/lib/api';
   import { useMutation } from '@tanstack/vue-query';
   import { api } from '@/lib/api';
@@ -122,14 +124,19 @@
     validationSchema: toTypedSchema(schema),
   });
 
+  const successMessage = ref<undefined | string>();
+
   const { mutate, isPending } = useMutation<
-    unknown,
+    { message: string },
     Error,
     Omit<z.infer<typeof schema>, 'passwordRepeat'>
   >({
     mutationKey: ['sign-up'],
     async mutationFn(values) {
       return (await api.post('/users', values)).data;
+    },
+    onSuccess({ message }) {
+      successMessage.value = message;
     },
   });
 

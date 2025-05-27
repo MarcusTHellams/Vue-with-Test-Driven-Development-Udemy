@@ -84,7 +84,7 @@ describe('sign up', () => {
         http.post(/users/i, async () => {
           delay(1000);
           return HttpResponse.json({
-            data: 'yeah',
+            message: 'Please check your mailbox to activate your account',
           });
         }),
       );
@@ -116,6 +116,10 @@ describe('sign up', () => {
       );
       expect(signup).toBeDisabled();
       await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Please check your mailbox to activate your account',
+      );
     });
   });
 });

@@ -5,7 +5,7 @@
         <BCard>
           <BCardTitle class="text-center" tag="h1">Sign Up</BCardTitle>
           <BCardText>
-            <form novalidate @submit="submitHandler">
+            <form v-if="!successMessage" data-testid="form" novalidate @submit="submitHandler">
               <BFormGroup class="mb-3" label-for="username" label="Username">
                 <BFormInput
                   :class="{ 'is-invalid': errors.username }"
@@ -64,32 +64,35 @@
             </form>
           </BCardText>
         </BCard>
-        <BAlert role="alert" variant="success" :model-value="!!successMessage">{{ successMessage }}</BAlert>
+        <BAlert role="alert" variant="success" :model-value="!!successMessage">{{
+          successMessage
+        }}</BAlert>
+        <BAlert role="alert" variant="danger" :model-value="!!error">{{ error?.message }}</BAlert>
       </BCol>
     </BRow>
   </BContainer>
 </template>
 
 <script setup lang="ts">
+  import '@/lib/api';
+  import { api } from '@/lib/api';
+  import { useMutation } from '@tanstack/vue-query';
+  import { toTypedSchema } from '@vee-validate/zod';
   import {
-    BFormInput,
-    BFormGroup,
-    BContainer,
-    BRow,
-    BCol,
+    BAlert,
     BButton,
     BCard,
     BCardText,
     BCardTitle,
-    BAlert,
+    BCol,
+    BContainer,
+    BFormGroup,
+    BFormInput,
+    BRow,
   } from 'bootstrap-vue-next';
   import { ErrorMessage, useForm } from 'vee-validate';
-  import { toTypedSchema } from '@vee-validate/zod';
-  import { z } from 'zod';
   import { computed, ref } from 'vue';
-  import '@/lib/api';
-  import { useMutation } from '@tanstack/vue-query';
-  import { api } from '@/lib/api';
+  import { z } from 'zod';
 
   const schema = z
     .object({
@@ -126,7 +129,7 @@
 
   const successMessage = ref<undefined | string>();
 
-  const { mutate, isPending } = useMutation<
+  const { mutate, isPending, error } = useMutation<
     { message: string },
     Error,
     Omit<z.infer<typeof schema>, 'passwordRepeat'>
@@ -140,7 +143,6 @@
     },
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const submitHandler = handleSubmit(({ passwordRepeat, ...values }) => {
     mutate(values);
   });

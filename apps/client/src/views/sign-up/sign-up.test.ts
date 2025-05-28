@@ -10,6 +10,26 @@ const user = userEvent.setup();
 
 const client = new QueryClient();
 
+const setup = async () => {
+  render(SignUp, { global: { plugins: [[VueQueryPlugin, { queryClient: client }]] } });
+
+  const password = screen.getByLabelText('Password');
+  const passwordRepeat = screen.getByLabelText('Password Repeat');
+  const username = screen.getByLabelText('Username');
+  const email = screen.getByLabelText('Email');
+  const signup = screen.getByRole('button', { name: 'Sign Up' });
+
+  await user.type(password, 'password');
+  await user.type(passwordRepeat, 'password');
+  await user.type(username, 'marcus');
+  await user.type(email, 'user@gmail.com');
+  return {
+    elements: {
+      button: signup,
+    },
+  };
+};
+
 describe('sign up', () => {
   it('has sign up heder', () => {
     render(SignUp, { global: { plugins: [[VueQueryPlugin, { queryClient: client }]] } });
@@ -116,10 +136,43 @@ describe('sign up', () => {
       );
       expect(signup).toBeDisabled();
       await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
-      expect(screen.getByRole('alert')).toBeInTheDocument();
-      expect(screen.getByRole('alert')).toHaveTextContent(
+      expect(screen.getAllByRole('alert')[0]).toBeInTheDocument();
+      expect(screen.getAllByRole('alert')[0]).toHaveTextContent(
         'Please check your mailbox to activate your account',
       );
+    });
+
+    it('hides signup form', async () => {
+      server.use(
+        http.post(/users/i, () => {
+          return HttpResponse.json({
+            message: 'It was a success',
+          });
+        }),
+      );
+      const {
+        elements: { button },
+      } = await setup();
+
+      await user.click(button);
+      waitFor(() => expect(screen.queryByTestId('form')).not.toBeInTheDocument());
+    });
+
+    describe('when error submitting form occurs', () => {
+      it('shows error message when request fails', async () => {
+        server.use(
+          http.post(/users/i, () => {
+            return HttpResponse.error();
+          }),
+        );
+        const {
+          elements: { button },
+        } = await setup();
+
+        await user.click(button);
+        const errorAlert = screen.getAllByRole('alert')[1];
+        await waitFor(() => expect(errorAlert).toHaveTextContent('Failed to fetch'));
+      });
     });
   });
 });
